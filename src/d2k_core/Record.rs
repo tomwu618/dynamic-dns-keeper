@@ -1,0 +1,4 @@
+enum Record{
+    A,
+    AAAA
+}
