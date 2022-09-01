@@ -14,8 +14,12 @@ mod d2k_core;
 use d2k_core::{Cloudflare, Function, Record};
 use crate::d2k_core::record;
 
+use log::{log_enabled, info, Level::Info};
+
 
 fn main() {
+    env_logger::init();
+
     let matches = App::new("Dynamic Dns Keeper")
         .version("0.0.1")
         .author("Tom Wu <luvnana618@gmail.com>")
@@ -87,8 +91,6 @@ fn main() {
             loop {
                 let v4_addr = get_v4_addr().unwrap();
 
-                println!("My Ip: {}", v4_addr.to_string());
-
                 cloudflare.update(Record::A(v4_addr));
 
                 thread::sleep(time::Duration::from_secs(60));
@@ -106,5 +108,6 @@ fn get_v4_addr() -> Result<Ipv4Addr, reqwest::Error> {
 
     let v4_addr = Ipv4Addr::from_str(&*my_ip);
 
+    info!("Current Ip : {}",my_ip);
     Ok(v4_addr.unwrap())
 }

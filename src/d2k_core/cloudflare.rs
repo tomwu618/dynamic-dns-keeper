@@ -10,6 +10,9 @@ use crate::Record::A;
 use super::Record;
 use super::Function;
 
+use log::Level::Info;
+use log::{info, log_enabled};
+
 struct Context {
     email: String,
     key: String,
@@ -76,8 +79,6 @@ impl Function for Cloudflare {
 
         let response = http_response.unwrap().text().unwrap();
 
-        println!("Response: {}", &response);
-
         let json: Value = serde_json::from_str(&response).unwrap();
 
         if json["success"].as_bool().unwrap() && json["result_info"]["count"].as_u64().unwrap() == 1 {
@@ -86,14 +87,12 @@ impl Function for Cloudflare {
             let id = result[0]["id"].as_str().unwrap();
             let content_ip = result[0]["content"].as_str().unwrap();
 
+            info!("Content Ip : {}",content_ip);
+
             let current_ip = match record {
                 A(ip) => ip.to_string(),
                 _ => panic!("Not supported record type"),
             };
-
-            println!("id: {}", id);
-            println!("content_ip: {}", content_ip);
-            println!("current_ip: {}", current_ip);
 
             if content_ip != current_ip {
                 let url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records/{}", self.context.zones, id);
@@ -113,7 +112,7 @@ impl Function for Cloudflare {
 
                 let response = http_response.unwrap().text().unwrap();
 
-                println!("Response: {}", &response);
+                info!("Response: {}", &response);
             }
         }
     }
