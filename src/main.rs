@@ -2,6 +2,8 @@ extern crate clap;
 
 use std::{thread, time};
 use std::collections::HashMap;
+use std::net::Ipv4Addr;
+use std::str::FromStr;
 use clap::{Arg, App, SubCommand};
 use reqwest::{Client, Error, Response};
 use reqwest::header::HeaderMap;
@@ -9,58 +11,85 @@ use serde_json::Value;
 
 mod d2k_core;
 
-use d2k_core::{Cloudflare, Function};
+use d2k_core::{Cloudflare, Function, Record};
+use crate::d2k_core::record;
 
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let matches = App::new("Dynamic Dns Keeper")
         .version("0.0.1")
         .author("Tom Wu <luvnana618@gmail.com>")
         .about("An advanced DDNS tool for WEB3.")
         .subcommand(SubCommand::with_name("start")
             .about("Start the DDNS service.")
-            .subcommand(Cloudflare::buildCliCommand())
+            .subcommand(SubCommand::with_name("cloudflare")
+                .about("https://www.cloudflare.com/")
+                .arg(Arg::with_name("email")
+                    .short('m')
+                    .long("email")
+                    .value_name("X-Auth-Email")
+                    .help("Email address associated with your account")
+                    .takes_value(true))
+                .arg(Arg::with_name("key")
+                    .short('k')
+                    .long("key")
+                    .value_name("X-Auth-Key")
+                    .help("API key generated on the \"My Account\" page")
+                    .takes_value(true))
+                .arg(Arg::with_name("type")
+                    .short('t')
+                    .long("type")
+                    .value_name("TYPE")
+                    .help("DNS record type")
+                    .takes_value(true)
+                    .default_value("A"))
+                .arg(Arg::with_name("name")
+                    .short('n')
+                    .long("name")
+                    .value_name("NAME")
+                    .help("DNS record name (or @ for the zone apex)")
+                    .takes_value(true))
+                .arg(Arg::with_name("ttl")
+                    .short('l')
+                    .long("ttl")
+                    .value_name("TTL")
+                    .help("Time to live, in seconds, of the DNS record. Must be between 60 and 86400, or 1 for 'automatic'")
+                    .default_value("1")
+                    .takes_value(true))
+                .arg(Arg::with_name("proxied")
+                    .short('p')
+                    .long("proxied")
+                    .value_name("PROXIED")
+                    .help("Whether the record is receiving the performance and security benefits of Cloudflare")
+                    .default_value("false")
+                    .takes_value(true))
+                .arg(Arg::with_name("zones")
+                    .short('z')
+                    .long("zones")
+                    .value_name("ZONE ID")
+                    .help("Specify the zone where the domain name to be modified")
+                    .default_value("false")
+                    .takes_value(true))
+                .arg(Arg::with_name("domain")
+                    .short('d')
+                    .long("domain")
+                    .value_name("Domain Name")
+                    .help("Specify the domain name to be modified")
+                    .default_value("false")
+                    .takes_value(true)))
         )
         .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("start") {
         if let Some(matches) = matches.subcommand_matches("cloudflare") {
-            println!("Start the DDNS service with keeper.cloudflare.");
-            println!("Email: {}", matches.value_of("email").unwrap());
-            println!("Key: {}", matches.value_of("key").unwrap());
-            println!("Type: {}", matches.value_of("type").unwrap());
-            println!("Name: {}", matches.value_of("name").unwrap());
-            println!("Content: {}", matches.value_of("content").unwrap());
-            println!("TTL: {}", matches.value_of("ttl").unwrap());
-            println!("Proxied: {}", matches.value_of("proxied").unwrap());
-            println!("Zone: {}", matches.value_of("zones").unwrap());
-            println!("Domain: {}", matches.value_of("domain").unwrap());
-
-            let mail = matches.value_of("email").unwrap();
-            let key = matches.value_of("key").unwrap();
-            let type_ = matches.value_of("type").unwrap();
-            let name = matches.value_of("name").unwrap();
-            let content = matches.value_of("content").unwrap();
-            let ttl = matches.value_of("ttl").unwrap();
-            let proxied = matches.value_of("proxied").unwrap();
-            let zone = matches.value_of("zones").unwrap();
-            let domain = matches.value_of("domain").unwrap();
-
-            let client = reqwest::Client::new();
+            let mut cloudflare = Cloudflare::new(matches);
 
             loop {
-                let my_ip = get_my_ip(&client).await.unwrap();
-                println!("My Ip: {}", my_ip);
+                let v4_addr = get_v4_addr().unwrap();
 
-                let dns_record_result = get_dns_record(&client, mail, key, zone, type_, name).await.unwrap();
+                println!("My Ip: {}", v4_addr.to_string());
 
-                if dns_record_result != my_ip {
-                    println!("Update DNS record.");
-                    // update_dns_record(mail, key, zone, type_, name, my_ip, ttl, proxied, domain).await.unwrap();
-                } else {
-                    println!("DNS record is up to date.");
-                }
+                cloudflare.update(Record::A(v4_addr));
 
                 thread::sleep(time::Duration::from_secs(60));
             }
@@ -68,41 +97,14 @@ async fn main() {
     }
 }
 
-async fn get_my_ip(client: &Client) -> Result<String, reqwest::Error> {
+fn get_v4_addr() -> Result<Ipv4Addr, reqwest::Error> {
+    let client = reqwest::blocking::Client::new();
+
     let my_ip = client.get("https://ip.yan-yun.com")
-        .send()
-        .await?
-        .text()
-        .await?;
+        .send()?
+        .text()?;
 
-    Ok(my_ip)
-}
+    let v4_addr = Ipv4Addr::from_str(&*my_ip);
 
-
-async fn get_dns_record(client: &Client, email: &str, key: &str, zones: &str, record_type: &str, name: &str) -> Result<String, Error> {
-    let url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records?type={}&name={}&order=type&direction=desc&match=all", zones, record_type, name);
-
-    let http_response = client.get(url)
-        .header("X-Auth-Email", email)
-        .header("X-Auth-Key", key)
-        .header("Content-type", "application/json")
-        .send()
-        .await?;
-
-    let response = http_response.text().await?;
-    println!("Response: {}", &response);
-
-    let json: Value = serde_json::from_str(&response).unwrap();
-
-    if json["success"].as_bool().unwrap() && json["result_info"]["count"].as_u64().unwrap() == 1 {
-        let result = json["result"].as_array().unwrap();
-
-        let id = result[0]["id"].as_str().unwrap();
-        let content = result[0]["content"].as_str().unwrap();
-
-        Ok(content.to_string())
-    } else {
-        Ok("OH NO!".to_string())
-    }
-
+    Ok(v4_addr.unwrap())
 }

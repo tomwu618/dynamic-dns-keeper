@@ -1,7 +1,5 @@
-pub trait Function {
-    fn buildCliCommand<'help>() -> clap::App<'help>;
-    fn select(_: clap::ArgMatches) -> Function;
+use crate::d2k_core::Record;
 
-    fn query() -> String;
-    fn update(ip: String);
+pub trait Function {
+    fn update(&self, record: Record);
 }
