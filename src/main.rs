@@ -102,12 +102,17 @@ fn main() {
 fn get_v4_addr() -> Result<Ipv4Addr, reqwest::Error> {
     let client = reqwest::blocking::Client::new();
 
-    let my_ip = client.get("https://ip.yan-yun.com")
-        .send()?
-        .text()?;
+    let my_ip = match client.get("https://ip.yan-yun.com")
+        .send() {
+        Ok(mut res) => {
+            let body = res.text().unwrap();
+            Ipv4Addr::from_str(&body).unwrap()
+        }
+        Err(err) => {
+            panic!("Error: {}", err);
+        }
+    };
 
-    let v4_addr = Ipv4Addr::from_str(&*my_ip);
-
-    info!("Current Ip : {}",my_ip);
-    Ok(v4_addr.unwrap())
+    info!("Current Ip : {}",my_ip.to_string());
+    Ok(my_ip)
 }

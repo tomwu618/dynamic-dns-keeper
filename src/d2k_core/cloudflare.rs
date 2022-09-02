@@ -71,13 +71,19 @@ impl Function for Cloudflare {
         let url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records?type={}&name={}.{}&order=type&direction=desc&match=all",
                           self.context.zones, self.context.type_, self.context.name, self.context.domain);
 
-        let http_response = client.get(url)
+        let http_response = match client.get(url)
             .header("X-Auth-Email", &self.context.email)
             .header("X-Auth-Key", &self.context.key)
             .header("Content-type", "application/json")
-            .send();
+            .send() {
+            Ok(response) => response,
+            Err(e) => {
+                println!("Error: {}", e);
+                return;
+            }
+        };
 
-        let response = http_response.unwrap().text().unwrap();
+        let response = http_response.text().unwrap();
 
         let json: Value = serde_json::from_str(&response).unwrap();
 
@@ -97,7 +103,7 @@ impl Function for Cloudflare {
             if content_ip != current_ip {
                 let url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records/{}", self.context.zones, id);
 
-                let http_response = client.put(url)
+                let http_response = match client.put(url)
                     .header("X-Auth-Email", &self.context.email)
                     .header("X-Auth-Key", &self.context.key)
                     .header("Content-type", "application/json")
@@ -108,9 +114,15 @@ impl Function for Cloudflare {
                         "ttl": self.context.ttl.parse::<u32>().unwrap(),
                         "proxied": self.context.proxied.parse::<bool>().unwrap(),
                     }).to_string())
-                    .send();
+                    .send() {
+                    Ok(response) => response,
+                    Err(e) => {
+                        println!("Error: {}", e);
+                        return;
+                    }
+                };
 
-                let response = http_response.unwrap().text().unwrap();
+                let response = http_response.text().unwrap();
 
                 info!("Response: {}", &response);
             }
