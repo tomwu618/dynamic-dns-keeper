@@ -1,20 +1,15 @@
 extern crate clap;
 
 use std::{thread, time};
-use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use clap::{Arg, App, SubCommand};
-use reqwest::{Client, Error, Response};
-use reqwest::header::HeaderMap;
-use serde_json::Value;
 
 mod d2k_core;
 
 use d2k_core::{Cloudflare, Function, Record};
-use crate::d2k_core::record;
 
-use log::{log_enabled, info, Level::Info};
+use log::{ info};
 
 
 fn main() {
@@ -86,7 +81,7 @@ fn main() {
 
     if let Some(matches) = matches.subcommand_matches("start") {
         if let Some(matches) = matches.subcommand_matches("cloudflare") {
-            let mut cloudflare = Cloudflare::new(matches);
+            let cloudflare = Cloudflare::new(matches);
 
             loop {
                 let v4_addr = get_v4_addr().unwrap();
@@ -104,7 +99,7 @@ fn get_v4_addr() -> Result<Ipv4Addr, reqwest::Error> {
 
     let my_ip = match client.get("https://ip.yan-yun.com")
         .send() {
-        Ok(mut res) => {
+        Ok(res) => {
             let body = res.text().unwrap();
             Ipv4Addr::from_str(&body).unwrap()
         }

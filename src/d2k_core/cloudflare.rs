@@ -1,17 +1,10 @@
-use std::collections::HashMap;
-use std::error::Error;
-use std::net::Ipv4Addr;
-use std::pin::Pin;
-use clap::{App, Arg, ArgMatches, SubCommand};
-use clap::builder::TypedValueParser;
-use reqwest::header::HeaderMap;
+use clap::{ArgMatches};
 use serde_json::{json, Value};
 use crate::Record::A;
 use super::Record;
 use super::Function;
 
-use log::Level::Info;
-use log::{info, log_enabled};
+use log::{info};
 
 struct Context {
     email: String,
@@ -22,8 +15,6 @@ struct Context {
     domain: String,
     ttl: String,
     proxied: String,
-
-    meta_data: HashMap<String, String>,
 }
 
 pub struct Cloudflare {
@@ -51,17 +42,9 @@ impl Cloudflare {
                 domain,
                 ttl,
                 proxied,
-                meta_data: Default::default(),
             },
         }
     }
-}
-
-enum PokerCard {
-    Clubs(u8),
-    Spades(u8),
-    Diamonds(char),
-    Hearts(char),
 }
 
 impl Function for Cloudflare {

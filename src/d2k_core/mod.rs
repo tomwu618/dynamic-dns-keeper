@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 pub use self::function::Function;
 pub use self::cloudflare::Cloudflare;
 pub use self::record::Record;
