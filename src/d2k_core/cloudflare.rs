@@ -78,7 +78,7 @@ impl Function for Cloudflare {
             .send() {
             Ok(response) => response,
             Err(e) => {
-                println!("Error: {}", e);
+                info!("Error: {}", e);
                 return;
             }
         };
@@ -117,7 +117,7 @@ impl Function for Cloudflare {
                     .send() {
                     Ok(response) => response,
                     Err(e) => {
-                        println!("Error: {}", e);
+                        info!("Error: {}", e);
                         return;
                     }
                 };
