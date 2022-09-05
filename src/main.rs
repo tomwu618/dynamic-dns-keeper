@@ -1,7 +1,7 @@
 extern crate clap;
 
 use std::{thread, time};
-use std::net::Ipv4Addr;
+use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
 use clap::{Arg, App, SubCommand};
 
@@ -95,7 +95,7 @@ fn main() {
 }
 
 fn get_v4_addr() -> Result<Ipv4Addr, reqwest::Error> {
-    let client = reqwest::blocking::Client::new();
+    let client = reqwest::blocking::Client::builder().local_address(IpAddr::from_str("0.0.0.0").unwrap()).build().unwrap();
 
     let my_ip = match client.get("https://ip.yan-yun.com")
         .send() {
