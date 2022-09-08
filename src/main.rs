@@ -9,7 +9,7 @@ mod d2k_core;
 
 use d2k_core::{Cloudflare, Function, Record};
 
-use log::{ info};
+use log::{info};
 
 
 fn main() {
@@ -84,9 +84,15 @@ fn main() {
             let cloudflare = Cloudflare::new(matches);
 
             loop {
-                let v4_addr = get_v4_addr().unwrap();
-
-                cloudflare.update(Record::A(v4_addr));
+                match get_v4_addr() {
+                    Ok(ip) => {
+                        let record = Record::A(ip);
+                        cloudflare.update(record);
+                    }
+                    Err(e) => {
+                        info!("Error: {}", e);
+                    }
+                }
 
                 thread::sleep(time::Duration::from_secs(60));
             }
@@ -104,7 +110,7 @@ fn get_v4_addr() -> Result<Ipv4Addr, reqwest::Error> {
             Ipv4Addr::from_str(&body).unwrap()
         }
         Err(err) => {
-            panic!("Error: {}", err);
+            return Err(err);
         }
     };
 
