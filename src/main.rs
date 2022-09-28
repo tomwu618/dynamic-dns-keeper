@@ -1,6 +1,7 @@
 extern crate clap;
 
-use std::{thread, time};
+use std::{thread, time, env};
+use std::env::VarError;
 use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
 use clap::{Arg, App, SubCommand};
@@ -13,6 +14,16 @@ use log::{info};
 
 
 fn main() {
+    let mut bind_ip = "0.0.0.0".to_string();
+
+    match env::var("DDR_BIND_IP") {
+        Ok(val) => {
+            bind_ip = val;
+        }
+        _ => {}
+    }
+    println!("DDR_BIND_IP {}", bind_ip);
+
     env_logger::init();
 
     let matches = App::new("Dynamic Dns Keeper")
@@ -84,7 +95,7 @@ fn main() {
             let cloudflare = Cloudflare::new(matches);
 
             loop {
-                match get_v4_addr() {
+                match get_v4_addr(bind_ip.clone()) {
                     Ok(ip) => {
                         let record = Record::A(ip);
                         cloudflare.update(record);
@@ -100,8 +111,8 @@ fn main() {
     }
 }
 
-fn get_v4_addr() -> Result<Ipv4Addr, reqwest::Error> {
-    let client = reqwest::blocking::Client::builder().local_address(IpAddr::from_str("0.0.0.0").unwrap()).build().unwrap();
+fn get_v4_addr(bind_ip: String) -> Result<Ipv4Addr, reqwest::Error> {
+    let client = reqwest::blocking::Client::builder().local_address(IpAddr::from_str(bind_ip.as_str()).unwrap()).build().unwrap();
 
     let my_ip = match client.get("https://ip.yan-yun.com")
         .send() {
