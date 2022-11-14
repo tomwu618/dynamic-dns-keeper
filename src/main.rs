@@ -1,114 +1,96 @@
 extern crate clap;
+extern crate core;
+
+#[macro_use]
+extern crate serde_derive;
+extern crate toml;
 
 use std::{thread, time, env};
 use std::env::VarError;
+use std::fs::File;
+use std::io::Read;
 use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
 use clap::{Arg, App, SubCommand};
 
 mod d2k_core;
 
-use d2k_core::{Cloudflare, Function, Record};
+use d2k_core::{Cloudflare, Function, Record, Config};
 
 use log::{info};
 
-
 fn main() {
-    let mut bind_ip = "0.0.0.0".to_string();
+    let file_path = "config.toml";
+    let mut file = match File::open(file_path) {
+        Ok(f) => f,
+        Err(e) => panic!("no such file {} exception:{}", file_path, e)
+    };
+    let mut str_val = String::new();
+    match file.read_to_string(&mut str_val) {
+        Ok(s) => s
+        ,
+        Err(e) => panic!("Error Reading file: {}", e)
+    };
 
-    match env::var("DDR_BIND_IP") {
-        Ok(val) => {
-            bind_ip = val;
-        }
-        _ => {}
-    }
-    println!("DDR_BIND_IP {}", bind_ip);
+    let config: Config = toml::from_str(&str_val).unwrap();
 
-    env_logger::init();
-
-    let matches = App::new("Dynamic Dns Keeper")
+    let menu = App::new("Dynamic Dns Keeper")
         .version("0.0.1")
         .author("Tom Wu <luvnana618@gmail.com>")
         .about("An advanced DDNS tool for WEB3.")
-        .subcommand(SubCommand::with_name("start")
-            .about("Start the DDNS service.")
-            .subcommand(SubCommand::with_name("cloudflare")
-                .about("https://www.cloudflare.com/")
-                .arg(Arg::with_name("email")
-                    .short('m')
-                    .long("email")
-                    .value_name("X-Auth-Email")
-                    .help("Email address associated with your account")
-                    .takes_value(true))
-                .arg(Arg::with_name("key")
-                    .short('k')
-                    .long("key")
-                    .value_name("X-Auth-Key")
-                    .help("API key generated on the \"My Account\" page")
-                    .takes_value(true))
-                .arg(Arg::with_name("type")
-                    .short('t')
-                    .long("type")
-                    .value_name("TYPE")
-                    .help("DNS record type")
-                    .takes_value(true)
-                    .default_value("A"))
-                .arg(Arg::with_name("name")
-                    .short('n')
-                    .long("name")
-                    .value_name("NAME")
-                    .help("DNS record name (or @ for the zone apex)")
-                    .takes_value(true))
-                .arg(Arg::with_name("ttl")
-                    .short('l')
-                    .long("ttl")
-                    .value_name("TTL")
-                    .help("Time to live, in seconds, of the DNS record. Must be between 60 and 86400, or 1 for 'automatic'")
-                    .default_value("1")
-                    .takes_value(true))
-                .arg(Arg::with_name("proxied")
-                    .short('p')
-                    .long("proxied")
-                    .value_name("PROXIED")
-                    .help("Whether the record is receiving the performance and security benefits of Cloudflare")
-                    .default_value("false")
-                    .takes_value(true))
-                .arg(Arg::with_name("zones")
-                    .short('z')
-                    .long("zones")
-                    .value_name("ZONE ID")
-                    .help("Specify the zone where the domain name to be modified")
-                    .default_value("false")
-                    .takes_value(true))
-                .arg(Arg::with_name("domain")
-                    .short('d')
-                    .long("domain")
-                    .value_name("Domain Name")
-                    .help("Specify the domain name to be modified")
-                    .default_value("false")
-                    .takes_value(true)))
-        )
+        .arg(Arg::with_name("config")
+            .short("c".parse().unwrap())
+            .long("config")
+            .value_name("config")
+            .help("select a config file")
+            .default_value("/etc/ddk/config.toml")
+            .takes_value(true))
         .get_matches();
 
-    if let Some(matches) = matches.subcommand_matches("start") {
-        if let Some(matches) = matches.subcommand_matches("cloudflare") {
-            let cloudflare = Cloudflare::new(matches);
+    let mut config_file = String::new();
 
-            loop {
-                match get_v4_addr(bind_ip.clone()) {
-                    Ok(ip) => {
-                        let record = Record::A(ip);
-                        cloudflare.update(record);
-                    }
-                    Err(e) => {
-                        info!("Error: {}", e);
-                    }
-                }
-
-                thread::sleep(time::Duration::from_secs(60));
-            }
+    match env::var("DDK_CONFIG") {
+        Ok(val) => {
+            println!("DDK_CONFIG: {}", val);
+            config_file = val;
         }
+        Err(VarError::NotPresent) => {
+            config_file = menu.value_of("config").unwrap().to_string();
+        }
+        _ => {}
     }
+
+    println!("config_file: {}", config_file);
+
+
+    // println!("DDR_BIND_IP {}", bind_ip);
+    //
+    // env_logger::init();
+    //
+    //
+    //
+    //
+    // println!("config_file {}", config_file);
+
+    // if let Some(matches) = matches.subcommand_matches("start") {
+    //     if let Some(matches) = matches.subcommand_matches("cloudflare") {
+    //         let cloudflare = Cloudflare::new(matches);
+    //
+    //         loop {
+    //             match get_v4_addr(bind_ip.clone()) {
+    //                 Ok(ip) => {
+    //                     let record = Record::A(ip);
+    //                     cloudflare.update(record);
+    //                 }
+    //                 Err(e) => {
+    //                     info!("Error: {}", e);
+    //                 }
+    //             }
+    //
+    //             thread::sleep(time::Duration::from_secs(60));
+    //         }
+    //     }
+    // }
 }
 
 fn get_v4_addr(bind_ip: String) -> Result<Ipv4Addr, reqwest::Error> {
