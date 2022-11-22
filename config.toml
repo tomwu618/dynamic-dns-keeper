@@ -1,24 +1,25 @@
-api_version = "v1"
+[global]
+api_version = "V1"
+post_up = "curl -s https://ip.yan-yun.com"
 
 [[cloudflare]]
-api_key = ""
-email = ""
-zone_id = ""
-record_id = ""
-record_name = ""
-record_type = "A"
-record_ttl = 1
-record_proxied = false
-CMD = "curl --interface eth1 --ipv4 https://api.ipify.org"
+ApiKey = ""
+Email = ""
+zoneID = ""
+recordID = ""
+recordName = ""
+recordType = "A"
+recordTTL = 1
+recordProxied = false
+GetIpCmd = "curl --interface eth1 --ipv4 https://api.ipify.org"
 
-[[cloudflare]]
-api_key = ""
-email = ""
-zone_id = ""
-record_id = ""
-record_name = ""
-record_type = "AAAA"
-record_ttl = 1
-record_proxied = false
-CMD = "curl --interface eth1 --ipv6 https://api.ipify.org"
-
+[[Cloudflare]]
+ApiKey = ""
+Email = ""
+zoneID = ""
+recordID = ""
+recordName = ""
+recordType = "A"
+recordTTL = 1
+recordProxied = false
+GetIpCmd = "curl --interface eth1 --ipv4 https://api.ipify.org"
