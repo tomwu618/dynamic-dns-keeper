@@ -12,13 +12,14 @@ mod d2k_core;
 mod config;
 mod menu;
 
+use d2k_core::{Cloudflare, Config, Function, Record};
+
 use log::info;
 use crate::menu::build_menu;
 
 fn main() {
     let menu = build_menu();
     let toml_config = config::read_config(menu);
-
 
 }
 
