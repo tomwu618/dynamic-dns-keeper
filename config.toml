@@ -1,6 +1,15 @@
 [global]
 api_version = "V1"
+ip_sonar_address = "https://ip.tomwu.dev"
 post_up = "ip route add default via 192.168.1.1 dev eth2 src 192.168.1.254 table 101; ip rule add from 192.168.1.254 table 101"
+
+[global.ipv4]
+enabled = true
+on_update= ""
+
+[global.ipv6]
+enabled = true
+on_update= "ip -6 route add default via fe80::1 dev eth2 src fe80::2 table 101; ip -6 rule add from fe80::2 table 101"
 
 [[cloudflare]]
 ApiKey = ""
@@ -19,7 +28,7 @@ Email = ""
 zoneID = ""
 recordID = ""
 recordName = ""
-recordType = "A"
+recordType = "AAAA"
 recordTTL = 1
 recordProxied = false
-GetIpCmd = "curl --interface eth1 --ipv4 https://api.ipify.org"
+GetIpCmd = "curl --interface eth1 --ipv6 https://api.ipify.org"

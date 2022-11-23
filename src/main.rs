@@ -21,6 +21,8 @@ fn main() {
     let menu = build_menu();
     let toml_config = config::read_config(menu);
 
+    println!("{:?}", toml_config);
+
 }
 
 fn get_v4_addr(bind_ip: String) -> Result<Ipv4Addr, reqwest::Error> {

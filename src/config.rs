@@ -18,6 +18,23 @@ pub struct Config {
 pub struct Global {
     api_version: String,
     post_up: String,
+    ip_sonar_address: String,
+    ipv4: IPV4,
+    ipv6: IPV6,
+}
+
+#[derive(Deserialize)]
+#[derive(Debug)]
+pub struct IPV4 {
+    enabled: bool,
+    on_update: String,
+}
+
+#[derive(Deserialize)]
+#[derive(Debug)]
+pub struct IPV6 {
+    enabled: bool,
+    on_update: String,
 }
 
 pub(crate) fn read_config(menu: ArgMatches) -> Config {
@@ -25,7 +42,6 @@ pub(crate) fn read_config(menu: ArgMatches) -> Config {
 
     match env::var("DDK_CONFIG") {
         Ok(val) => {
-            println!("DDK_CONFIG: {}", val);
             config_file_path = val;
         }
         Err(VarError::NotPresent) => {
