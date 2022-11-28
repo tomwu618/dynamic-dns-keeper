@@ -5,46 +5,18 @@ use super::Record;
 use super::Function;
 
 use log::{info};
-
-struct Context {
-    email: String,
-    key: String,
-    zones: String,
-    type_: String,
-    name: String,
-    domain: String,
-    ttl: String,
-    proxied: String,
-}
+use crate::d2k_core::Record::AAAA;
 
 pub struct Cloudflare {
-    context: Context,
-}
-
-impl Cloudflare {
-    pub(crate) fn new(matches: &ArgMatches) -> Self {
-        let email = matches.value_of("email").unwrap().to_string();
-        let key = matches.value_of("key").unwrap().to_string();
-        let zones = matches.value_of("zones").unwrap().to_string();
-        let type_ = matches.value_of("type").unwrap().to_string();
-        let name = matches.value_of("name").unwrap().to_string();
-        let domain = matches.value_of("domain").unwrap().to_string();
-        let ttl = matches.value_of("ttl").unwrap().to_string();
-        let proxied = matches.value_of("proxied").unwrap().to_string();
-
-        Cloudflare {
-            context: Context {
-                email,
-                key,
-                zones,
-                type_,
-                name,
-                domain,
-                ttl,
-                proxied,
-            },
-        }
-    }
+    pub(crate) email: String,
+    pub(crate) key: String,
+    pub(crate) zones: String,
+    pub(crate) type_: String,
+    pub(crate) name: String,
+    pub(crate) domain: String,
+    pub(crate) ttl: String,
+    pub(crate) proxied: String,
+    pub(crate) recordType: String,
 }
 
 impl Function for Cloudflare {
@@ -52,11 +24,11 @@ impl Function for Cloudflare {
         let client = reqwest::blocking::Client::new();
 
         let url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records?type={}&name={}.{}&order=type&direction=desc&match=all",
-                          self.context.zones, self.context.type_, self.context.name, self.context.domain);
+                          self.zones, self.type_, self.name, self.domain);
 
         let http_response = match client.get(url)
-            .header("X-Auth-Email", &self.context.email)
-            .header("X-Auth-Key", &self.context.key)
+            .header("X-Auth-Email", &self.email)
+            .header("X-Auth-Key", &self.key)
             .header("Content-type", "application/json")
             .send() {
             Ok(response) => response,
@@ -80,22 +52,23 @@ impl Function for Cloudflare {
 
             let current_ip = match record {
                 A(ip) => ip.to_string(),
+                AAAA(ip) => ip.to_string(),
                 _ => panic!("Not supported record type"),
             };
 
             if content_ip != current_ip {
-                let url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records/{}", self.context.zones, id);
+                let url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records/{}", self.zones, id);
 
                 let http_response = match client.put(url)
-                    .header("X-Auth-Email", &self.context.email)
-                    .header("X-Auth-Key", &self.context.key)
+                    .header("X-Auth-Email", &self.email)
+                    .header("X-Auth-Key", &self.key)
                     .header("Content-type", "application/json")
                     .body(json!({
-                        "type": self.context.type_,
-                        "name": self.context.name,
+                        "type": self.type_,
+                        "name": self.name,
                         "content":current_ip,
-                        "ttl": self.context.ttl.parse::<u32>().unwrap(),
-                        "proxied": self.context.proxied.parse::<bool>().unwrap(),
+                        "ttl": self.ttl.parse::<u32>().unwrap(),
+                        "proxied": self.proxied.parse::<bool>().unwrap(),
                     }).to_string())
                     .send() {
                     Ok(response) => response,
