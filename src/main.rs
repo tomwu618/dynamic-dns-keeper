@@ -140,7 +140,7 @@ fn start_v6_thread(toml_config: &Config) -> JoinHandle<()> {
 fn main() {
     let menu = build_menu();
     let toml_config = config::read_config(menu);
-    cmds(toml_config.global.cmds.as_str());
+    cmds(toml_config.global.post_up.as_str());
 
     let v4_thread = start_v4_thread(&toml_config);
     let v6_thread = start_v6_thread(&toml_config);
