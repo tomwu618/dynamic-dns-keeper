@@ -113,8 +113,8 @@ fn start_v6_thread(toml_config: &Config) -> JoinHandle<()> {
             let ip_addr = cmd(get_ip_cmd.as_str());
 
             tables.iter().for_each(|t| {
-               // let record = Record::AAAA(Ipv6Addr::from_str(&*ip_addr).unwrap());
-                let record = Record::AAAA(Ipv6Addr::from_str("2409:8a04:2551:2d50:f05b:c1ea:8856:aa9a").unwrap());
+                let record = Record::AAAA(Ipv6Addr::from_str(&*ip_addr).unwrap());
+                //let record = Record::AAAA(Ipv6Addr::from_str("2409:8a04:2551:2d50:f05b:c1ea:8856:aa9a").unwrap());
 
                 let cloudflare = Cloudflare {
                     email: t["Email"].as_str().unwrap().to_string(),
@@ -129,7 +129,6 @@ fn start_v6_thread(toml_config: &Config) -> JoinHandle<()> {
                 };
 
                 cloudflare.update(record);
-
             });
 
             thread::sleep(Duration::from_secs(60));
