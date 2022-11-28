@@ -76,21 +76,27 @@ fn start_v4_thread(toml_config: &Config) -> JoinHandle<()> {
                 let ip_addr = ip_addr_result.unwrap();
 
                 tables.iter().for_each(|t| {
-                    let record = Record::A(Ipv4Addr::from_str(&*ip_addr).unwrap());
+                    let Ipv4Addr = Ipv4Addr::from_str(&*ip_addr);
+                    if !Ipv4Addr.is_err() {
+                        let record = Record::A(Ipv4Addr::from_str(&*ip_addr).unwrap());
 
-                    let cloudflare = Cloudflare {
-                        email: t["Email"].as_str().unwrap().to_string(),
-                        key: t["ApiKey"].as_str().unwrap().to_string(),
-                        zones: t["zoneID"].as_str().unwrap().to_string(),
-                        type_: t["recordType"].as_str().unwrap().to_string(),
-                        name: t["recordName"].as_str().unwrap().to_string(),
-                        domain: t["domain"].as_str().unwrap().to_string(),
-                        recordType: t["recordType"].as_str().unwrap().to_string(),
-                        ttl: t["recordTTL"].as_integer().unwrap().to_string(),
-                        proxied: t["recordProxied"].as_bool().unwrap().to_string(),
-                    };
+                        let cloudflare = Cloudflare {
+                            email: t["Email"].as_str().unwrap().to_string(),
+                            key: t["ApiKey"].as_str().unwrap().to_string(),
+                            zones: t["zoneID"].as_str().unwrap().to_string(),
+                            type_: t["recordType"].as_str().unwrap().to_string(),
+                            name: t["recordName"].as_str().unwrap().to_string(),
+                            domain: t["domain"].as_str().unwrap().to_string(),
+                            recordType: t["recordType"].as_str().unwrap().to_string(),
+                            ttl: t["recordTTL"].as_integer().unwrap().to_string(),
+                            proxied: t["recordProxied"].as_bool().unwrap().to_string(),
+                        };
 
-                    cloudflare.update(record);
+                        cloudflare.update(record);
+                    }
+
+
+
                 });
             }
 
@@ -122,22 +128,24 @@ fn start_v6_thread(toml_config: &Config) -> JoinHandle<()> {
                 let ip_addr = ip_addr_result.unwrap();
 
                 tables.iter().for_each(|t| {
-                    let record = Record::AAAA(Ipv6Addr::from_str(&*ip_addr).unwrap());
-                    //let record = Record::AAAA(Ipv6Addr::from_str("2409:8a04:2551:2d50:f05b:c1ea:8856:aa9a").unwrap());
+                    let Ipv6Addr = Ipv6Addr::from_str(&*ip_addr);
+                    if !Ipv6Addr.is_err() {
+                        let record = Record::AAAA(Ipv6Addr.unwrap());
 
-                    let cloudflare = Cloudflare {
-                        email: t["Email"].as_str().unwrap().to_string(),
-                        key: t["ApiKey"].as_str().unwrap().to_string(),
-                        zones: t["zoneID"].as_str().unwrap().to_string(),
-                        type_: t["recordType"].as_str().unwrap().to_string(),
-                        name: t["recordName"].as_str().unwrap().to_string(),
-                        domain: t["domain"].as_str().unwrap().to_string(),
-                        recordType: t["recordType"].as_str().unwrap().to_string(),
-                        ttl: t["recordTTL"].as_integer().unwrap().to_string(),
-                        proxied: t["recordProxied"].as_bool().unwrap().to_string(),
-                    };
+                        let cloudflare = Cloudflare {
+                            email: t["Email"].as_str().unwrap().to_string(),
+                            key: t["ApiKey"].as_str().unwrap().to_string(),
+                            zones: t["zoneID"].as_str().unwrap().to_string(),
+                            type_: t["recordType"].as_str().unwrap().to_string(),
+                            name: t["recordName"].as_str().unwrap().to_string(),
+                            domain: t["domain"].as_str().unwrap().to_string(),
+                            recordType: t["recordType"].as_str().unwrap().to_string(),
+                            ttl: t["recordTTL"].as_integer().unwrap().to_string(),
+                            proxied: t["recordProxied"].as_bool().unwrap().to_string(),
+                        };
 
-                    cloudflare.update(record);
+                        cloudflare.update(record);
+                    }
                 });
 
                 thread::sleep(Duration::from_secs(60));
