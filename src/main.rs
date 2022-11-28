@@ -25,7 +25,7 @@ use toml::value::{Array, Table};
 use crate::menu::build_menu;
 use std::process::Command;
 
-fn cmd(command: &str) -> String {
+fn cmd(command: &str) -> Result<String, bool> {
     info!("Run Command : {}",command);
 
     let split_command = command.split(" ").collect::<Vec<&str>>();
@@ -38,14 +38,18 @@ fn cmd(command: &str) -> String {
     let output = cmd.output().expect("failed to execute process");
     let output_str = String::from_utf8_lossy(&output.stdout).to_string();
     println!("{}", output_str);
-    output_str
+
+    if output.status.success() {
+        Ok(output_str)
+    } else {
+        Err(false)
+    }
 }
 
 fn cmds(command: &str) {
     let split_command_row = command.split(";").collect::<Vec<&str>>();
     split_command_row.iter().for_each(|command| {
-        let output = cmd(command);
-        println!("{}", output);
+        cmd(command);
     });
 }
 
@@ -67,25 +71,28 @@ fn start_v4_thread(toml_config: &Config) -> JoinHandle<()> {
 
     thread::spawn(move || {
         loop {
-            let ip_addr = cmd(get_ip_cmd.as_str());
+            let ip_addr_result = cmd(get_ip_cmd.as_str());
+            if !ip_addr_result.is_err() {
+                let ip_addr = ip_addr_result.unwrap();
 
-            tables.iter().for_each(|t| {
-                let record = Record::A(Ipv4Addr::from_str(&*ip_addr).unwrap());
+                tables.iter().for_each(|t| {
+                    let record = Record::A(Ipv4Addr::from_str(&*ip_addr).unwrap());
 
-                let cloudflare = Cloudflare {
-                    email: t["Email"].as_str().unwrap().to_string(),
-                    key: t["ApiKey"].as_str().unwrap().to_string(),
-                    zones: t["zoneID"].as_str().unwrap().to_string(),
-                    type_: t["recordType"].as_str().unwrap().to_string(),
-                    name: t["recordName"].as_str().unwrap().to_string(),
-                    domain: t["domain"].as_str().unwrap().to_string(),
-                    recordType: t["recordType"].as_str().unwrap().to_string(),
-                    ttl: t["recordTTL"].as_integer().unwrap().to_string(),
-                    proxied: t["recordProxied"].as_bool().unwrap().to_string(),
-                };
+                    let cloudflare = Cloudflare {
+                        email: t["Email"].as_str().unwrap().to_string(),
+                        key: t["ApiKey"].as_str().unwrap().to_string(),
+                        zones: t["zoneID"].as_str().unwrap().to_string(),
+                        type_: t["recordType"].as_str().unwrap().to_string(),
+                        name: t["recordName"].as_str().unwrap().to_string(),
+                        domain: t["domain"].as_str().unwrap().to_string(),
+                        recordType: t["recordType"].as_str().unwrap().to_string(),
+                        ttl: t["recordTTL"].as_integer().unwrap().to_string(),
+                        proxied: t["recordProxied"].as_bool().unwrap().to_string(),
+                    };
 
-                cloudflare.update(record);
-            });
+                    cloudflare.update(record);
+                });
+            }
 
             thread::sleep(Duration::from_secs(60));
         }
@@ -110,28 +117,31 @@ fn start_v6_thread(toml_config: &Config) -> JoinHandle<()> {
 
     thread::spawn(move || {
         loop {
-            let ip_addr = cmd(get_ip_cmd.as_str());
+            let ip_addr_result = cmd(get_ip_cmd.as_str());
+            if !ip_addr_result.is_err() {
+                let ip_addr = ip_addr_result.unwrap();
 
-            tables.iter().for_each(|t| {
-                let record = Record::AAAA(Ipv6Addr::from_str(&*ip_addr).unwrap());
-                //let record = Record::AAAA(Ipv6Addr::from_str("2409:8a04:2551:2d50:f05b:c1ea:8856:aa9a").unwrap());
+                tables.iter().for_each(|t| {
+                    let record = Record::AAAA(Ipv6Addr::from_str(&*ip_addr).unwrap());
+                    //let record = Record::AAAA(Ipv6Addr::from_str("2409:8a04:2551:2d50:f05b:c1ea:8856:aa9a").unwrap());
 
-                let cloudflare = Cloudflare {
-                    email: t["Email"].as_str().unwrap().to_string(),
-                    key: t["ApiKey"].as_str().unwrap().to_string(),
-                    zones: t["zoneID"].as_str().unwrap().to_string(),
-                    type_: t["recordType"].as_str().unwrap().to_string(),
-                    name: t["recordName"].as_str().unwrap().to_string(),
-                    domain: t["domain"].as_str().unwrap().to_string(),
-                    recordType: t["recordType"].as_str().unwrap().to_string(),
-                    ttl: t["recordTTL"].as_integer().unwrap().to_string(),
-                    proxied: t["recordProxied"].as_bool().unwrap().to_string(),
-                };
+                    let cloudflare = Cloudflare {
+                        email: t["Email"].as_str().unwrap().to_string(),
+                        key: t["ApiKey"].as_str().unwrap().to_string(),
+                        zones: t["zoneID"].as_str().unwrap().to_string(),
+                        type_: t["recordType"].as_str().unwrap().to_string(),
+                        name: t["recordName"].as_str().unwrap().to_string(),
+                        domain: t["domain"].as_str().unwrap().to_string(),
+                        recordType: t["recordType"].as_str().unwrap().to_string(),
+                        ttl: t["recordTTL"].as_integer().unwrap().to_string(),
+                        proxied: t["recordProxied"].as_bool().unwrap().to_string(),
+                    };
 
-                cloudflare.update(record);
-            });
+                    cloudflare.update(record);
+                });
 
-            thread::sleep(Duration::from_secs(60));
+                thread::sleep(Duration::from_secs(60));
+            }
         }
     })
 }
@@ -146,22 +156,4 @@ fn main() {
 
     v4_thread.join().unwrap();
     v6_thread.join().unwrap();
-}
-
-fn get_v4_addr(bind_ip: String) -> Result<Ipv4Addr, reqwest::Error> {
-    let client = reqwest::blocking::Client::builder().local_address(IpAddr::from_str(bind_ip.as_str()).unwrap()).build().unwrap();
-
-    let my_ip = match client.get("https://ip.yan-yun.com")
-        .send() {
-        Ok(res) => {
-            let body = res.text().unwrap();
-            Ipv4Addr::from_str(&body).unwrap()
-        }
-        Err(err) => {
-            return Err(err);
-        }
-    };
-
-    info!("Current Ip : {}",my_ip.to_string());
-    Ok(my_ip)
 }
