@@ -26,19 +26,21 @@ fn main() {
     toml_config.record.iter().for_each(|r| {
         let record=r.clone();
         thread::spawn(move || {
-            let fun = function::create(&record);
+            loop {
+                let fun = function::create(&record);
 
-            let ip_addr_result = cmd::run(record.get("ip_address_from").unwrap().as_str().unwrap());
+                let ip_addr_result = cmd::run(record.get("ip_address_from").unwrap().as_str().unwrap());
 
-            if !ip_addr_result.is_err() {
-                let ip_addr = ip_addr_result.unwrap();
-                let ip = IpAddr::from_str(&*ip_addr);
-                if !ip.is_err() {
-                    fun.update(ip.unwrap());
+                if !ip_addr_result.is_err() {
+                    let ip_addr = ip_addr_result.unwrap();
+                    let ip = IpAddr::from_str(&*ip_addr);
+                    if !ip.is_err() {
+                        fun.update(ip.unwrap());
+                    }
                 }
-            }
 
-            thread::sleep(Duration::from_secs(60));
+                thread::sleep(Duration::from_secs(60));
+            }
         });
     });
 
