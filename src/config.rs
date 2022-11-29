@@ -10,7 +10,7 @@ use toml::value::Array;
 #[derive(Debug)]
 pub struct Config {
     pub global: Global,
-    pub cloudflare: Array,
+    pub record: Array,
 }
 
 #[derive(Deserialize)]
@@ -18,25 +18,6 @@ pub struct Config {
 pub struct Global {
     pub api_version: String,
     pub post_up: String,
-    pub ip_sonar_address: String,
-    pub ipv4: IPV4,
-    pub ipv6: IPV6,
-}
-
-#[derive(Deserialize)]
-#[derive(Debug)]
-pub struct IPV4 {
-    pub enabled: bool,
-    pub get_ip_cmd: String,
-    pub on_update: String,
-}
-
-#[derive(Deserialize)]
-#[derive(Debug)]
-pub struct IPV6 {
-    pub enabled: bool,
-    pub get_ip_cmd: String,
-    pub on_update: String,
 }
 
 pub(crate) fn read_config(menu: ArgMatches) -> Config {
