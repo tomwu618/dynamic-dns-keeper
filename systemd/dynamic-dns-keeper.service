@@ -1,0 +1,22 @@
+[Unit]
+Description=dynamic-dns-keeper
+Documentation=https://github.com/tomwu618/dynamic-dns-keeper
+After=network.target network-online.target
+Requires=network-online.target
+
+Restart=on-failure
+RestartSec=10
+
+[Service]
+DDK_CONFIG=/opt/config.toml
+Type=notify
+User=root
+Group=root
+ExecStart= /usr/bin/dynamic-dns-keeper
+ExecStop=ps -ef | grep dynamic-dns-keeper | awk '{print $2}' | xargs kill -9
+TimeoutStopSec=5s
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

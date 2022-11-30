@@ -22,6 +22,7 @@ use crate::menu::build_menu;
 fn main() {
     let menu = build_menu();
     let toml_config = config::read_config(menu);
+    cmd::run_array(toml_config.global.post_up.as_str());
 
     toml_config.record.iter().for_each(|r| {
         let record=r.clone();

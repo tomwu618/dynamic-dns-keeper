@@ -1,8 +1,11 @@
-use log::info;
 use std::process::Command;
 
 pub(crate) fn run(command: &str) -> Result<String, String> {
-    info!("Run Command : {}",command);
+    if command.len() == 0 {
+        return Err("command is empty".to_string());
+    }
+
+    print!("Run {}", command);
 
     let split_command = command.split(" ").collect::<Vec<&str>>();
 
@@ -11,15 +14,16 @@ pub(crate) fn run(command: &str) -> Result<String, String> {
         cmd.arg(split_command[i]);
     }
 
-    let output = cmd.output().expect("failed to execute process");
-    let output_str = String::from_utf8_lossy(&output.stdout).to_string();
-    println!("{}", output_str);
-
-    if output.status.success() {
-        Ok(output_str)
+    let output = cmd.output();
+    return if output.is_err() {
+        let error = output.err().unwrap().to_string();
+        println!("  Error: {}", &error);
+        Err(error)
     } else {
-        Err(output_str)
-    }
+        let output = String::from_utf8(output.unwrap().stdout).unwrap();
+        println!("  Success: {}", &output);
+        Ok(output)
+    };
 }
 
 pub(crate) fn run_array(command: &str) {

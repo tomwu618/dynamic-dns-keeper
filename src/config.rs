@@ -17,6 +17,7 @@ pub struct Config {
 #[derive(Debug)]
 pub struct Global {
     pub api_version: String,
+    pub post_up: String,
 }
 
 pub(crate) fn read_config(menu: ArgMatches) -> Config {
