@@ -3,7 +3,7 @@ use toml::Value;
 use crate::cloudflare;
 
 pub trait Function {
-    fn update(&self, record: IpAddr);
+    fn update(&self, record: IpAddr) -> bool;
 }
 
 pub fn create(c: &Value) -> Box<dyn Function> {

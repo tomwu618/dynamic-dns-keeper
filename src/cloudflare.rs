@@ -16,7 +16,7 @@ pub struct Cloudflare {
 }
 
 impl Cloudflare {
-    pub(crate) fn new(api_key:String,email:String,zone_id:String,type_:String,name:String,domain:String,ttl:String,proxied:String) -> Self {
+    pub(crate) fn new(api_key: String, email: String, zone_id: String, type_: String, name: String, domain: String, ttl: String, proxied: String) -> Self {
         Cloudflare {
             api_key,
             email,
@@ -31,7 +31,7 @@ impl Cloudflare {
 }
 
 impl Function for Cloudflare {
-    fn update(&self, ip_addr: IpAddr) {
+    fn update(&self, ip_addr: IpAddr) -> bool {
         let client = reqwest::blocking::Client::new();
 
         let url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records?type={}&name={}.{}&order=type&direction=desc&match=all",
@@ -45,7 +45,7 @@ impl Function for Cloudflare {
             Ok(response) => response,
             Err(e) => {
                 info!("Error: {}", e);
-                return;
+                return false;
             }
         };
 
@@ -81,14 +81,15 @@ impl Function for Cloudflare {
                     Ok(response) => response,
                     Err(e) => {
                         info!("Error: {}", e);
-                        return;
+                        return false;
                     }
                 };
 
                 let response = http_response.text().unwrap();
 
                 info!("Response: {}", &response);
-            }
-        }
+                return true;
+            } else { return false; }
+        } else { return false; }
     }
 }
