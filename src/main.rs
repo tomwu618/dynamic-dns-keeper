@@ -42,10 +42,12 @@ fn main() {
                     if !ip.is_err() {
                         let updated = fun.update(ip.unwrap());
                         if updated {
-                            let on_update_cmd = record.get("ip_address_on_update_cmd");
-                            if on_update_cmd.is_some() && !DO_UPDATE_CMD_IP_LIST.contains(&ip_addr) {
-                                let cmd_str= on_update_cmd.unwrap().as_str().unwrap().replace("${IP_ADDRESS}", &*ip_addr);
-                                cmd::run_array(cmd_str.to_string().as_str());
+                            if !DO_UPDATE_CMD_IP_LIST.contains(&ip_addr) {
+                                let on_update_cmd = record.get("ip_address_on_update_cmd");
+                                if on_update_cmd.is_some() {
+                                    let cmd_str = on_update_cmd.unwrap().as_str().unwrap().replace("${IP_ADDRESS}", &*ip_addr);
+                                    cmd::run_array(cmd_str.to_string().as_str());
+                                }
 
                                 DO_UPDATE_CMD_IP_LIST.push(ip_addr);
                             }
