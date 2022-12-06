@@ -1,7 +1,5 @@
-use std::borrow::Borrow;
 use std::net::IpAddr;
 use std::str::FromStr;
-use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::Duration;
 use crate::config::Config;
@@ -13,8 +11,6 @@ pub(crate) fn start_worker(toml_config: &Config) {
         let record = r.clone();
 
         thread::spawn(move || {
-            let mut updated_ip_list: Vec<&str> = Vec::new();
-
             loop {
                 let fun = function::create(&record);
                 let ip_addr_result = cmd::run(record.get("ip_address_from_cmd").unwrap().as_str().unwrap());

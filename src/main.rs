@@ -5,8 +5,7 @@ extern crate core;
 extern crate serde_derive;
 extern crate toml;
 
-use std::net::IpAddr;
-use std::str::FromStr;
+
 use std::thread;
 use std::time::Duration;
 use crate::init::init;
@@ -21,11 +20,7 @@ mod init;
 mod worker;
 
 use crate::menu::build_menu;
-use std::env;
-use std::sync::{Arc, RwLock};
 use crate::worker::start_worker;
-
-const DO_UPDATE_CMD_IP_LIST: Vec<String> = Vec::new();
 
 fn main() {
     let menu = build_menu();
