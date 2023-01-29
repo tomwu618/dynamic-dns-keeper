@@ -17,6 +17,10 @@ ExecStop=ps -ef | grep dynamic-dns-keeper | awk '{print $2}' | xargs kill -9
 TimeoutStopSec=5s
 PrivateTmp=true
 ProtectSystem=full
+TimeoutStartSec=180
 
 [Install]
 WantedBy=multi-user.target
+
+#/lib/systemd/system/dynamic-dns-keeper.service
+#systemctl enable dynamic-dns-keeper
