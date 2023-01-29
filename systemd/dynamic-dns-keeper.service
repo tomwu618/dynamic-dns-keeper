@@ -9,7 +9,7 @@ RestartSec=10
 
 [Service]
 DDK_CONFIG=/opt/config.toml
-Type=notify
+Type=simple
 User=root
 Group=root
 ExecStart= /usr/bin/dynamic-dns-keeper
@@ -17,7 +17,7 @@ ExecStop=ps -ef | grep dynamic-dns-keeper | awk '{print $2}' | xargs kill -9
 TimeoutStopSec=5s
 PrivateTmp=true
 ProtectSystem=full
-TimeoutStartSec=180
+TimeoutStartSec=60
 
 [Install]
 WantedBy=multi-user.target
