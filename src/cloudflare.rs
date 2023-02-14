@@ -49,8 +49,14 @@ impl Function for Cloudflare {
             }
         };
 
-        let response = http_response.text().unwrap();
+        let result_response = http_response.text();
+        if result_response.is_err() {
+            return false;
+        }
 
+        let response = result_response.unwrap();
+
+        //Todo
         let json: Value = serde_json::from_str(&response).unwrap();
 
         if json["success"].as_bool().unwrap() && json["result_info"]["count"].as_u64().unwrap() == 1 {
