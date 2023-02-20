@@ -1,6 +1,6 @@
 use std::net::IpAddr;
 use toml::Value;
-use crate::cloudflare;
+use crate::{aliyun, cloudflare};
 
 pub trait Function {
     fn update(&self, record: IpAddr) -> bool;
@@ -23,6 +23,18 @@ pub fn create(c: &Value) -> Box<dyn Function> {
             let proxied = api_param_table["record_proxied"].as_bool().unwrap().to_string();
 
             let cloudflare = cloudflare::Cloudflare::new(api_key, email, zone_id, type_, name, domain, ttl, proxied);
+            Box::new(cloudflare)
+        },
+        "aliyun" => {
+            let key_id = api_param_table["key_id"].as_str().unwrap().to_string();
+            let key_secret = api_param_table["key_secret"].as_str().unwrap().to_string();
+            let record_id = api_param_table["record_id"].as_str().unwrap().to_string();
+            let record_rr = api_param_table["record_rr"].as_str().unwrap().to_string();
+            let record_type = api_param_table["record_type"].as_str().unwrap().to_string();
+            let record_ttl = api_param_table["record_ttl"].as_str().unwrap().to_string();
+            let record_line = api_param_table["record_line"].as_str().unwrap().to_string();
+
+            let cloudflare = aliyun::AliYun::new(key_id, key_secret,record_id,record_rr,record_type,record_ttl,record_line);
             Box::new(cloudflare)
         }
         _ => panic!("Unknown function type: {}", domain_registrar),

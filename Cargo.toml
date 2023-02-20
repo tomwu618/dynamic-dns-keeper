@@ -11,8 +11,9 @@ reqwest = { version = "0.11.11", features = ["json","blocking"] }
 tokio = { version = "1.20.1", features = ["full"] }
 serde_json = { version = "^1.0.85" }
 log = "0.4.17"
-env_logger = "0.9.0"
+env_logger = "0.10.0"
+aliyun-openapi-core-rust-sdk = "0.3.0"
 
-toml = "0.5.9"
+toml = "0.7.0"
 serde_derive = "1.0.32"
 serde = "1.0.32"

@@ -18,6 +18,7 @@ mod function;
 mod cloudflare;
 mod init;
 mod worker;
+mod aliyun;
 
 use crate::menu::build_menu;
 use crate::worker::start_worker;
