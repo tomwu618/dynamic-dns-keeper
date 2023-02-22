@@ -2,6 +2,13 @@ use std::net::IpAddr;
 use aliyun_openapi_core_rust_sdk::RPClient;
 use crate::function::Function;
 
+extern crate rustc_serialize;
+extern crate serde_json;
+
+use rustc_serialize::json::{Json, Object};
+
+//aliyun alidns DescribeDomainRecords --DomainName
+
 pub struct AliYun {
     key_id: String,
     key_secret: String,
@@ -53,7 +60,17 @@ impl Function for AliYun {
         if response.is_err() {
             println!("DescribeRegions error: {}", response.err().unwrap());
         } else {
-            println!("DescribeRegions response: {}", response.ok().unwrap());
+            let json_data =response.ok().unwrap();
+
+            let json_obj = Json::from_str(json_data.as_str()).unwrap();
+
+            if let Some(obj) = json_obj.as_object() {
+                return if obj.contains_key("Code") {
+                    false
+                } else {
+                    true
+                }
+            }
         }
 
         return true;
