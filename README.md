@@ -1,5 +1,7 @@
 # Go DDNS Keeper - Dynamic DNS Client
 
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftomwu618%2Fdynamic-dns-keeper.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Ftomwu618%2Fdynamic-dns-keeper?ref=badge_shield)
+
 Go DDNS Keeper is a Dynamic Domain Name System (DDNS) client tool written in Go. It allows you to monitor IP address changes and automatically update your DNS records with various DNS service providers (such as Aliyun, Cloudflare) based on a configuration file.
 
 ## Key Features
@@ -234,7 +236,7 @@ key_id = "YOUR_ALIYUN_ACCESS_KEY_ID"
 key_secret = "YOUR_ALIYUN_ACCESS_KEY_SECRET"
 domain_name = "yourdomain.com"
 record_id = "ALIYUN_RECORD_ID_FOR_IPV4"
-record_rr = "home" # resolves to https://www.google.com/search?q=home.yourdomain.com
+record_rr = "home" # resolves to home.yourdomain.com
 record_type = "A"
 record_ttl = "600" # or 600
 record_line = "default"
@@ -242,7 +244,6 @@ record_line = "default"
 [[record]]
 domain_registrar = "cloudflare"
 ip_address_from_cmd = "curl -s https://api64.ipify.org" # Get IPv6
-
 ip_address_on_update_cmd = "/opt/scripts/cloudflare_updated.sh ${IP_ADDRESS}"
 [record.api_param]
 api_key = "YOUR_CLOUDFLARE_API_KEY"
@@ -260,11 +261,12 @@ record_proxied = false
 The program outputs operational logs (including IP address retrieval, DNS update attempts, error messages, etc.) to standard output. You can redirect this to a log file as needed.
 
 For example, on Linux/macOS:
-
 ./ddns-keeper -c /path/to/config.toml > /var/log/ddns-keeper.log 2>&1 &
 
 
 ## License
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftomwu618%2Fdynamic-dns-keeper.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Ftomwu618%2Fdynamic-dns-keeper?ref=badge_large)
 
 This project is licensed under the MIT License. (Assuming MIT, please update if different)
 
