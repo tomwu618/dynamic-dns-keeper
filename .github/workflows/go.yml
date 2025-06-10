@@ -1,32 +1,30 @@
-# .github/workflows/go.yml
-
-# 工作流名称
+# Workflow name
 name: Go CI & Release for dynamic-dns-keeper
 
-# 触发工作流的事件
+# Events that trigger the workflow
 on:
   push:
     branches:
-      - 'main' # 当推送到 main 分支时触发
+      - 'main' # Trigger on push to the main branch
     tags:
-      - 'v*'   # 当推送 v* 格式的标签时触发
+      - 'v*'   # Trigger on push of tags like v*
   pull_request:
     branches:
-      - 'main' # 当向 main 分支发起 Pull Request 时触发
+      - 'main' # Trigger on Pull Request to the main branch
 
-# 定义一个或多个 job
+# Define one or more jobs
 jobs:
   build-test-and-release:
-    # Job 的显示名称，会根据矩阵动态变化
+    # Job display name, changes dynamically based on the matrix
     name: Build (${{ matrix.target.os }}/${{ matrix.target.arch }})
-    # Job 运行的环境
+    # The environment the job will run on
     runs-on: ubuntu-latest
 
-    # 为此 Job 授予 GITHUB_TOKEN 的权限，以便创建 Release
+    # Grant permissions to GITHUB_TOKEN for this job to create a release
     permissions:
-      contents: write  # 允许创建 Release、tag 和上传附件
+      contents: write  # Allows creating releases, tags, and uploading assets
 
-    # 定义构建矩阵
+    # Define the build matrix
     strategy:
       matrix:
         target:
@@ -34,36 +32,36 @@ jobs:
           - {os: darwin, arch: arm64, name_suffix: darwin_arm64}
           - {os: linux, arch: amd64, name_suffix: linux_amd64}
           - {os: windows, arch: amd64, name_suffix: windows_amd64, ext: .exe}
-        go_version: ['1.24'] # 请确保这是你项目希望使用的 Go 版本
+        go_version: ['1.24'] # Ensure this is the Go version you want for your project
 
-    # Job 的执行步骤
+    # Steps to execute for the job
     steps:
-      # 步骤 1: 检出代码
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 步骤 2: 设置 Go 环境
+      # Step 2: Set up Go environment
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go_version }}
           cache-dependency-path: go.sum
 
-      # 步骤 3: 整理模块依赖
+      # Step 3: Tidy module dependencies
       - name: Tidy modules
         run: go mod tidy
 
-      # 步骤 4: 运行测试 (如果你的项目有测试文件的话)
+      # Step 4: Run tests (if you have test files)
       - name: Run tests
         run: go test -v ./...
 
-      # 步骤 5: 动态设置输出文件名和归档类型
+      # Step 5: Dynamically set output filenames and archive type
       - name: Set output names and archive type
         id: set_names
         shell: bash
         run: |
           BINARY_BASE_NAME="dynamic-dns-keeper"
-          BINARY_NAME="${BINARY_BASE_NAME}${--_target.ext--}}"
+          BINARY_NAME="${BINARY_BASE_NAME}${{ matrix.target.ext }}"
           
           if [ "${{ matrix.target.os }}" == "windows" ]; then
             ARCHIVE_NAME="${BINARY_BASE_NAME}_${{ matrix.target.name_suffix }}.zip"
@@ -74,16 +72,16 @@ jobs:
           echo "binary_name=${BINARY_NAME}" >> $GITHUB_OUTPUT
           echo "archive_name=${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
 
-      # 步骤 6: 交叉编译
+      # Step 6: Cross-compile the application
       - name: Compile for ${{ matrix.target.os }}/${{ matrix.target.arch }}
         env:
           GOOS: ${{ matrix.target.os }}
           GOARCH: ${{ matrix.target.arch }}
-        run: go build -v -o ${{ steps.set_names.outputs.binary_name }} -ldflags="-s -w" main.go
+        run: go build -v -o ${{ steps.set_names.outputs.binary_name }} -ldflags="-s -w" .
 
-      # 步骤 7: 打包二进制文件、许可证和 README
-      # 重要: 请确保你的仓库根目录下有 LICENSE 和 README.md 文件
-      - name: Archive binary
+      # Step 7: Archive the binary, LICENSE, and README
+      # IMPORTANT: Ensure you have LICENSE and README.md files in your repository root
+      - name: Archive release files
         shell: bash
         run: |
           if [ "${{ matrix.target.os }}" == "windows" ]; then
@@ -91,19 +89,21 @@ jobs:
           else
             tar -czvf ${{ steps.set_names.outputs.archive_name }} ${{ steps.set_names.outputs.binary_name }} LICENSE README.md
           fi
-          ls -l # 调试步骤：列出生成的归档文件
+          ls -l # Debug step: list the generated archive file
 
-      # 步骤 8: (此步骤主要用于调试) 当推送到 main 分支时，上传构建产物
-      - name: Upload Build Artifact (for main branch pushes)
+      # Step 8: Upload build artifact on pushes to the main branch
+      - name: Upload Build Artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.set_names.outputs.binary_name }}-${{ matrix.target.name_suffix }} # 产物在UI上显示的名称
-          path: ${{ steps.set_names.outputs.archive_name }} # 上传的归档文件
+          # Name of the artifact displayed on the GitHub UI
+          name: ${{ steps.set_names.outputs.binary_name }}-${{ matrix.target.name_suffix }}
+          # The archive file to upload
+          path: ${{ steps.set_names.outputs.archive_name }}
           retention-days: 7
 
-      # 步骤 9: 当推送 tag 时，创建 GitHub Release 并上传
-      - name: Create Release and Upload Release Asset (for tags)
+      # Step 9: Create GitHub Release and upload asset on tag push
+      - name: Create Release and Upload Asset
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
