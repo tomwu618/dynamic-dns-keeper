@@ -48,7 +48,6 @@ Go DDNS Keeper is a Dynamic Domain Name System (DDNS) client tool written in Go.
 
 ./ddns-keeper [arguments]
 
-
 ### Command-line Arguments
 
 * `-config <file_path>` or `--config <file_path>`:
@@ -74,153 +73,154 @@ The program uses a TOML-formatted configuration file. By default, it attempts to
 This section contains global settings for the program.
 
 * `api_version = "V1"`
-    * Description: API version identifier (currently mainly for user reference; the program itself may not strictly depend on this version number for logic switching).
-    * Type: String
-    * Example: `"V1"`
+  * Description: API version identifier (currently mainly for user reference; the program itself may not strictly depend on this version number for logic switching).
+  * Type: String
+  * Example: `"V1"`
 
 * `post_up_wait = 0`
-    * Description: The number of seconds the program waits after startup before executing `post_up_cmd`. Can be used to wait for network connection stability.
-    * Type: Integer (seconds)
-    * Example: `5`
+  * Description: The number of seconds the program waits after startup before executing `post_up_cmd`. Can be used to wait for network connection stability.
+  * Type: Integer (seconds)
+  * Example: `5`
 
 * `post_up_cmd = ""`
-    * Description: Command(s) to execute after the program starts and waits for `post_up_wait` seconds. Can be a series of commands separated by semicolons (`;`).
-    * Type: String
-    * Example: `"echo DDNS service started > /var/log/ddns.log; systemctl restart my_service"`
+  * Description: Command(s) to execute after the program starts and waits for `post_up_wait` seconds. Can be a series of commands separated by semicolons (`;`).
+  * Type: String
+  * Example: `"echo DDNS service started > /var/log/ddns.log; systemctl restart my_service"`
 
 * `check_interval_seconds = 60`
-    * Description: The periodic interval in seconds for checking and updating the IP address for each DNS record.
-    * Type: Integer (seconds)
-    * Default: `60` (if not specified in the config file or if set to 0 or a negative number)
-    * Example: `300` (checks every 5 minutes)
+  * Description: The periodic interval in seconds for checking and updating the IP address for each DNS record.
+  * Type: Integer (seconds)
+  * Default: `60` (if not specified in the config file or if set to 0 or a negative number)
+  * Example: `300` (checks every 5 minutes)
 
 ### 2. Record Configuration `[[record]]`
 
 This section is used to define one or more DNS records that need dynamic updates. You can configure different DNS providers and parameters for each record. Multiple `[[record]]` blocks can be used.
 
 * `domain_registrar = ""`
-    * Description: Specifies the domain service provider for this record.
-    * Type: String
-    * Required: Yes
-    * Possible values: `"aliyun"`, `"cloudflare"` (case-insensitive)
-    * Example: `"aliyun"`
+  * Description: Specifies the domain service provider for this record.
+  * Type: String
+  * Required: Yes
+  * Possible values: `"aliyun"`, `"cloudflare"` (case-insensitive)
+  * Example: `"aliyun"`
 
 * `ip_address_from_cmd = ""`
-    * Description: The command used to obtain the current public IP address. The program executes this command and uses its standard output as the IP address.
-    * Type: String
-    * Required: Yes
-    * Example: `"curl -s ifconfig.me/ip"`, `"my_custom_ip_script.sh"`
+  * Description: The command used to obtain the current public IP address. The program executes this command and uses its standard output as the IP address.
+  * Type: String
+  * Required: Yes
+  * Example: `"curl -s ifconfig.me/ip"`, `"my_custom_ip_script.sh"`
 
 * `ip_address_on_update_cmd = ""`
-    * Description: Command(s) to execute after the IP address for this record is successfully updated. The placeholder `${IP_ADDRESS}` in the command will be replaced with the newly updated IP address. Can be a series of commands separated by semicolons (`;`).
-    * Type: String
-    * Required: No
-    * Example: `"echo IP for home updated to ${IP_ADDRESS}; /usr/local/bin/notify_me.sh ${IP_ADDRESS}"`
+  * Description: Command(s) to execute after the IP address for this record is successfully updated. The placeholder `${IP_ADDRESS}` in the command will be replaced with the newly updated IP address. Can be a series of commands separated by semicolons (`;`).
+  * Type: String
+  * Required: No
+  * Example: `"echo IP for home updated to ${IP_ADDRESS}; /usr/local/bin/notify_me.sh ${IP_ADDRESS}"`
 
 * `api_param`
-    * Description: An inline table containing parameters specific to the `domain_registrar`.
-    * Type: Table (map)
-    * Required: Yes
+  * Description: An inline table containing parameters specific to the `domain_registrar`.
+  * Type: Table (map)
+  * Required: Yes
 
 #### 2.1 Aliyun Parameters (`api_param` for `domain_registrar = "aliyun"`)
 
 When `domain_registrar = "aliyun"`, the `api_param` table should contain the following fields:
 
 * `key_id = ""`
-    * Description: Aliyun AccessKey ID.
-    * Type: String
-    * Required: Yes
+  * Description: Aliyun AccessKey ID.
+  * Type: String
+  * Required: Yes
 
 * `key_secret = ""`
-    * Description: Aliyun AccessKey Secret.
-    * Type: String
-    * Required: Yes
+  * Description: Aliyun AccessKey Secret.
+  * Type: String
+  * Required: Yes
 
 * `domain_name = ""`
-    * Description: Your main domain name. E.g., `example.com`. **This field is crucial.**
-    * Type: String
-    * Required: Yes
+  * Description: Your main domain name. E.g., `example.com`. **This field is crucial.**
+  * Type: String
+  * Required: Yes
 
 * `record_id = ""`
-    * Description: The unique ID of the DNS record to be updated. You can obtain this from the Aliyun console.
-    * Type: String
-    * Required: Yes
+  * Description: The unique ID of the DNS record to be updated. You can obtain this from the Aliyun console.
+  * Type: String
+  * Required: Yes
 
 * `record_rr = ""`
-    * Description: The host record (subdomain prefix) of the DNS record. For example, for `home.example.com`, this value would be `"home"`. For the main domain itself (e.g., `example.com`), `@` is typically used.
-    * Type: String
-    * Required: Yes
+  * Description: The host record (subdomain prefix) of the DNS record. For example, for `home.example.com`, this value would be `"home"`. For the main domain itself (e.g., `example.com`), `@` is typically used.
+  * Type: String
+  * Required: Yes
 
 * `record_type = ""`
-    * Description: The type of the DNS record.
-    * Type: String
-    * Required: Yes
-    * Possible values: `"A"` (IPv4), `"AAAA"` (IPv6)
+  * Description: The type of the DNS record.
+  * Type: String
+  * Required: Yes
+  * Possible values: `"A"` (IPv4), `"AAAA"` (IPv6)
 
 * `record_ttl = "600"`
-    * Description: The TTL (Time To Live) value for the DNS record, in seconds.
-    * Type: String (the program will attempt to parse it as an integer) or Integer
-    * Required: Yes
-    * Example: `"600"`, `600`
+  * Description: The TTL (Time To Live) value for the DNS record, in seconds.
+  * Type: String (the program will attempt to parse it as an integer) or Integer
+  * Required: Yes
+  * Example: `"600"`, `600`
 
 * `record_line = "default"`
-    * Description: The DNS resolution line. Defaults to `"default"`. Other possible values include `"telecom"`, `"unicom"`, `"mobile"`, `"overseas"`, etc. Refer to Aliyun documentation for specifics.
-    * Type: String
-    * Required: No (defaults to `"default"`)
+  * Description: The DNS resolution line. Defaults to `"default"`. Other possible values include `"telecom"`, `"unicom"`, `"mobile"`, `"overseas"`, etc. Refer to Aliyun documentation for specifics.
+  * Type: String
+  * Required: No (defaults to `"default"`)
 
 * `endpoint = "alidns.aliyuncs.com"`
-    * Description: The API endpoint for Aliyun. Usually does not need to be changed.
-    * Type: String
-    * Required: No (defaults to `"alidns.aliyuncs.com"`)
+  * Description: The API endpoint for Aliyun. Usually does not need to be changed.
+  * Type: String
+  * Required: No (defaults to `"alidns.aliyuncs.com"`)
 
 #### 2.2 Cloudflare Parameters (`api_param` for `domain_registrar = "cloudflare"`)
 
 When `domain_registrar = "cloudflare"`, the `api_param` table should contain the following fields:
 
 * `api_key = ""`
-    * Description: Cloudflare Global API Key or an API Token with DNS editing permissions.
-    * Type: String
-    * Required: Yes
+  * Description: Cloudflare Global API Key or an API Token with DNS editing permissions.
+  * Type: String
+  * Required: Yes
 
 * `email = ""`
-    * Description: Your Cloudflare account email address (if using Global API Key). This field might not be necessary if using an API Token, depending on the token's configuration (the current code implementation expects this field with the `api_key`).
-    * Type: String
-    * Required: Yes (for Global API Key authentication)
+  * Description: Your Cloudflare account email address (if using Global API Key). This field might not be necessary if using an API Token, depending on the token's configuration (the current code implementation expects this field with the `api_key`).
+  * Type: String
+  * Required: Yes (for Global API Key authentication)
 
 * `zone_id = ""`
-    * Description: The Zone ID of your domain on Cloudflare.
-    * Type: String
-    * Required: Yes
+  * Description: The Zone ID of your domain on Cloudflare.
+  * Type: String
+  * Required: Yes
 
 * `record_type = ""`
-    * Description: The type of the DNS record.
-    * Type: String
-    * Required: Yes
-    * Possible values: `"A"`, `"AAAA"`
+  * Description: The type of the DNS record.
+  * Type: String
+  * Required: Yes
+  * Possible values: `"A"`, `"AAAA"`
 
 * `record_name = ""`
-    * Description: The name of the DNS record (subdomain prefix). For example, for `sub.example.com`, this value is `"sub"`. For the root domain (`example.com`), typically use `@`.
-    * Type: String
-    * Required: Yes
+  * Description: The name of the DNS record (subdomain prefix). For example, for `sub.example.com`, this value is `"sub"`. For the root domain (`example.com`), typically use `@`.
+  * Type: String
+  * Required: Yes
 
 * `domain = ""`
-    * Description: Your main domain name. E.g., `example.com`.
-    * Type: String
-    * Required: Yes
+  * Description: Your main domain name. E.g., `example.com`.
+  * Type: String
+  * Required: Yes
 
 * `record_ttl = 1`
-    * Description: The TTL value for the DNS record. For Cloudflare, `1` means automatic TTL. Other values are specific seconds.
-    * Type: Integer
-    * Required: Yes
-    * Example: `1` (automatic), `120` (2 minutes)
+  * Description: The TTL value for the DNS record. For Cloudflare, `1` means automatic TTL. Other values are specific seconds.
+  * Type: Integer
+  * Required: Yes
+  * Example: `1` (automatic), `120` (2 minutes)
 
 * `record_proxied = false`
-    * Description: Whether to enable Cloudflare's proxy (CDN, orange cloud).
-    * Type: Boolean (`true` or `false`)
-    * Required: Yes
+  * Description: Whether to enable Cloudflare's proxy (CDN, orange cloud).
+  * Type: Boolean (`true` or `false`)
+  * Required: Yes
 
 ### 3. Example Configuration File (`config.toml`)
 
+```toml
 [global]
 api_version = "V1-Go"
 post_up_wait = 3 # Wait for 3 seconds
@@ -254,22 +254,19 @@ domain = "anotherdomain.net"
 record_type = "AAAA"
 record_ttl = 1 # Automatic TTL
 record_proxied = false
-
+```
 
 ## Logging
 
 The program outputs operational logs (including IP address retrieval, DNS update attempts, error messages, etc.) to standard output. You can redirect this to a log file as needed.
 
 For example, on Linux/macOS:
+```bash
 ./ddns-keeper -c /path/to/config.toml > /var/log/ddns-keeper.log 2>&1 &
-
+```
 
 ## License
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftomwu618%2Fdynamic-dns-keeper.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Ftomwu618%2Fdynamic-dns-keeper?ref=badge_large)
 
 This project is licensed under the MIT License.
-
----
-
-Hopefully, this document helps you better use and understand the Go DDNS Keeper tool!

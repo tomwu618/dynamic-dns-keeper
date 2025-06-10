@@ -94,45 +94,24 @@ func NewAliyunUpdater(params map[string]interface{}) (*AliyunUpdater, error) {
 		TTL:        ttl,
 		Line:       line,
 	}
-
-	// Optionally, fetch initial IP to prevent update on first run if IP matches
-	// This requires a DescribeSubDomainRecords call
-	// currentDnsIP, err := updater.fetchCurrentRecordIP()
-	// if err == nil {
-	// 	log.Printf("Initial IP for %s.%s (Aliyun) is %s\n", rr, domainName, currentDnsIP)
-	// 	updater.currentIP = currentDnsIP
-	// } else {
-	//	log.Printf("Could not fetch initial IP for %s.%s (Aliyun): %v\n", rr, domainName, err)
-	// }
-
 	return updater, nil
 }
 
 // fetchCurrentRecordIP fetches the current IP address of the DNS record from Aliyun.
 // This helps in avoiding unnecessary updates if the IP hasn't changed.
 func (u *AliyunUpdater) fetchCurrentRecordIP() (string, error) {
-	request := &alidns20150109.DescribeSubDomainRecordsRequest{
-		SubDomain: tea.String(u.RR + "." + u.DomainName),
-		Type:      tea.String(u.RecordType),
-		Line:      tea.String(u.Line), // Filter by line if specific
+	// *** MODIFICATION START ***
+	// Set explicit timeouts for the API call to prevent long hangs
+	runtime := &service.RuntimeOptions{
+		ConnectTimeout: tea.Int(5000),  // 5 seconds connect timeout
+		ReadTimeout:    tea.Int(10000), // 10 seconds read timeout
 	}
-	runtime := &service.RuntimeOptions{}
-	response, err := u.client.DescribeSubDomainRecordsWithOptions(request, runtime)
-	if err != nil {
-		return "", fmt.Errorf("aliyun DescribeSubDomainRecords API error for %s.%s: %w", u.RR, u.DomainName, err)
-	}
+	// *** MODIFICATION END ***
 
-	if response == nil || response.Body == nil || response.Body.DomainRecords == nil || len(response.Body.DomainRecords.Record) == 0 {
-		return "", fmt.Errorf("no records found or unexpected response for %s.%s (Aliyun)", u.RR, u.DomainName)
-	}
-
-	// Iterate through records to find the exact match if multiple lines or TTLs exist for the same RR & Type
-	// For simplicity, assuming the first relevant record is the one we manage with RecordId
-	// A more robust way is to iterate and match RecordId if available in DescribeSubDomainRecords response,
-	// or ensure the SubDomain + Type + Line combination is unique enough.
-	// The DescribeSubDomainRecords API returns a list, we need to find our specific record.
-	// If we have RecordID, it's better to use DescribeDomainRecordInfo.
-
+	// NOTE: The original code had a call to DescribeSubDomainRecords followed by DescribeDomainRecordInfo.
+	// Using DescribeDomainRecordInfo is more direct and efficient if we already have the RecordId.
+	// The log showed an error with DescribeSubDomainRecords, but for simplicity and efficiency,
+	// we will rely on the more direct DescribeDomainRecordInfo and apply the timeout to it.
 	infoRequest := &alidns20150109.DescribeDomainRecordInfoRequest{
 		RecordId: tea.String(u.RecordId),
 	}
@@ -156,8 +135,9 @@ func (u *AliyunUpdater) Update(newIP net.IP) (bool, error) {
 	// This avoids updating if the IP is already correct or if the local currentIP state is stale.
 	remoteIP, err := u.fetchCurrentRecordIP()
 	if err != nil {
+		// If fetching remote IP fails (e.g., due to timeout), log the error and proceed.
+		// The subsequent update attempt will either succeed or fail gracefully.
 		log.Printf("Aliyun: Failed to fetch remote IP for %s.%s: %v. Proceeding with update attempt.\n", u.RR, u.DomainName, err)
-		// If fetching fails, we might still want to try an update, or handle error differently
 	} else {
 		u.currentIP = remoteIP
 		log.Printf("Aliyun: Remote IP for %s.%s is %s\n", u.RR, u.DomainName, u.currentIP)
@@ -178,11 +158,17 @@ func (u *AliyunUpdater) Update(newIP net.IP) (bool, error) {
 		TTL:      tea.Int64(u.TTL),
 		Line:     tea.String(u.Line),
 	}
-	runtime := &service.RuntimeOptions{}
+
+	// *** MODIFICATION START ***
+	// Apply the same timeouts to the update request
+	runtime := &service.RuntimeOptions{
+		ConnectTimeout: tea.Int(5000),
+		ReadTimeout:    tea.Int(10000),
+	}
+	// *** MODIFICATION END ***
 
 	_, err = u.client.UpdateDomainRecordWithOptions(request, runtime)
 	if err != nil {
-		// Try to parse Aliyun SDK error for more details
 		if sdkErr, ok := err.(*tea.SDKError); ok {
 			errMsg := tea.StringValue(sdkErr.Message)
 			log.Printf("Aliyun API UpdateDomainRecord error for %s.%s: Code: %s, Message: %s, Data: %v\n",
@@ -193,7 +179,7 @@ func (u *AliyunUpdater) Update(newIP net.IP) (bool, error) {
 		return false, fmt.Errorf("aliyun update failed: %w", err)
 	}
 
-	u.currentIP = newIPStr // Update local cache of the IP
+	u.currentIP = newIPStr
 	log.Printf("Aliyun: Successfully updated IP for %s.%s to %s\n", u.RR, u.DomainName, newIPStr)
 	return true, nil
 }
