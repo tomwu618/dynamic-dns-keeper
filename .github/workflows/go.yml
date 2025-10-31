@@ -28,10 +28,11 @@ jobs:
     strategy:
       matrix:
         target:
-          - {os: darwin, arch: amd64, name_suffix: darwin_amd64}
-          - {os: darwin, arch: arm64, name_suffix: darwin_arm64}
-          - {os: linux, arch: amd64, name_suffix: linux_amd64}
-        go_version: ['1.25'] # Ensure this is the Go version you want for your project
+          - { os: darwin, arch: amd64, name_suffix: darwin_amd64 }
+          - { os: darwin, arch: arm64, name_suffix: darwin_arm64 }
+          - { os: linux, arch: amd64, name_suffix: linux_amd64 }
+          - { os: linux, arch: arm64, name_suffix: linux_arm64 }
+        go_version: [ '1.25' ] # Ensure this is the Go version you want for your project
 
     # Steps to execute for the job
     steps:
